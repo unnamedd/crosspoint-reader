@@ -21,6 +21,7 @@
 #include "settings/OpdsServerListActivity.h"
 #include "settings/SettingsActivity.h"
 #include "util/FrontlightPanelActivity.h"
+#include "util/FrontlightPanelActivityRs.h"
 #include "util/FullScreenMessageActivity.h"
 
 static portMUX_TYPE activityManagerSpinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -86,8 +87,13 @@ void ActivityManager::loop() {
     // frontlight (the gesture itself is capability-gated in
     // wasLightPanelGesture()). Pushed, so it returns to whatever was
     // underneath — including mid-book.
-    if (Frontlight.present() && currentActivity->name != "FrontlightPanel" && mappedInput.wasLightPanelGesture()) {
-      pushActivity(std::make_unique<FrontlightPanelActivity>(renderer, mappedInput));
+    if (Frontlight.present() && currentActivity->name.rfind("FrontlightPanel", 0) != 0 &&
+        mappedInput.wasLightPanelGesture()) {
+      if (SETTINGS.frontlightPanelRust) {
+        pushActivity(std::make_unique<FrontlightPanelActivityRs>(renderer, mappedInput));
+      } else {
+        pushActivity(std::make_unique<FrontlightPanelActivity>(renderer, mappedInput));
+      }
       return;
     }
 
