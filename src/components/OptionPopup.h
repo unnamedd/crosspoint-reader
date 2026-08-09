@@ -123,57 +123,23 @@ class OptionPopup {
 
   bool isActive() const { return active; }
 
- private:
   struct Layout {
     Rect dialog{0, 0, 0, 0};
     std::vector<Rect> options;
   };
 
+  // Pure geometry, shared so the dialog math exists in exactly one place.
+  // BaseTheme::drawOptionPopup lays the dialog out the same way; the Rust UI
+  // framework calls this through cpp_option_popup_row_rect rather than adding
+  // a third copy that would drift from these two.
+  static Layout computeLayout(const GfxRenderer& renderer, const char* title, const std::vector<std::string>& options);
+
+ private:
   // Text measurement is expensive and wasScreenTouchDown() is level-triggered, so the
   // layout is computed once per show() and cached rather than rebuilt every loop().
   const Layout& getLayout(const GfxRenderer& renderer) const {
     if (layoutValid) return layout;
-
-    const auto& metrics = UITheme::getInstance().getMetrics();
-    const auto pageWidth = renderer.getScreenWidth();
-    const auto pageHeight = renderer.getScreenHeight();
-    const int optionFontId = metrics.optionPopupUseSmallFont ? UI_10_FONT_ID : UI_12_FONT_ID;
-    const EpdFontFamily::Style optionStyle =
-        metrics.optionPopupOptionFontBold ? EpdFontFamily::BOLD : EpdFontFamily::REGULAR;
-
-    const int itemSpacing = metrics.optionPopupItemSpacing;
-    const int innerPadding = metrics.optionPopupInnerPadding;
-    const int selectionHPadding = metrics.optionPopupSelectionHPadding;
-    const int selectionVPadding = metrics.optionPopupSelectionVPadding;
-
-    const int optionLineHeight = renderer.getLineHeight(optionFontId);
-    const int titleLineHeight = renderer.getLineHeight(UI_12_FONT_ID);
-    const int rowHeight = optionLineHeight + selectionVPadding * 2;
-
-    int maxTextWidth = renderer.getTextWidth(UI_12_FONT_ID, title.c_str(), EpdFontFamily::BOLD);
-    for (const auto& opt : ownedStrings) {
-      const int width = renderer.getTextWidth(optionFontId, opt.c_str(), optionStyle);
-      if (width > maxTextWidth) maxTextWidth = width;
-    }
-
-    const int optionCount = static_cast<int>(ownedStrings.size());
-    const int listHeight = rowHeight * optionCount + itemSpacing * (optionCount - 1);
-    const int dialogW = std::min((maxTextWidth + innerPadding * 2 + selectionHPadding * 2) * 12 / 10,
-                                 pageWidth - metrics.optionPopupDialogSideMargin * 2);
-    const int contentHeight = titleLineHeight + metrics.optionPopupTitleGap + listHeight;
-    const int dialogH = contentHeight + innerPadding * 2;
-    const int dialogX = (pageWidth - dialogW) / 2;
-    const int dialogY = (pageHeight - dialogH) / 2;
-    const int itemRectX = dialogX + innerPadding;
-    const int itemRectW = dialogW - innerPadding * 2;
-    const int firstItemY = dialogY + innerPadding + titleLineHeight + metrics.optionPopupTitleGap;
-
-    layout.dialog = Rect{dialogX, dialogY, dialogW, dialogH};
-    layout.options.clear();
-    layout.options.reserve(optionCount);
-    for (int i = 0; i < optionCount; i++) {
-      layout.options.push_back(Rect{itemRectX, firstItemY + i * (rowHeight + itemSpacing), itemRectW, rowHeight});
-    }
+    layout = computeLayout(renderer, title.c_str(), ownedStrings);
     layoutValid = true;
     return layout;
   }
@@ -190,3 +156,49 @@ class OptionPopup {
   mutable Layout layout;
   mutable bool layoutValid = false;
 };
+
+inline OptionPopup::Layout OptionPopup::computeLayout(const GfxRenderer& renderer, const char* title,
+                                                      const std::vector<std::string>& options) {
+  Layout layout;
+
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  const auto pageWidth = renderer.getScreenWidth();
+  const auto pageHeight = renderer.getScreenHeight();
+  const int optionFontId = metrics.optionPopupUseSmallFont ? UI_10_FONT_ID : UI_12_FONT_ID;
+  const EpdFontFamily::Style optionStyle =
+      metrics.optionPopupOptionFontBold ? EpdFontFamily::BOLD : EpdFontFamily::REGULAR;
+
+  const int itemSpacing = metrics.optionPopupItemSpacing;
+  const int innerPadding = metrics.optionPopupInnerPadding;
+  const int selectionHPadding = metrics.optionPopupSelectionHPadding;
+  const int selectionVPadding = metrics.optionPopupSelectionVPadding;
+
+  const int optionLineHeight = renderer.getLineHeight(optionFontId);
+  const int titleLineHeight = renderer.getLineHeight(UI_12_FONT_ID);
+  const int rowHeight = optionLineHeight + selectionVPadding * 2;
+
+  int maxTextWidth = renderer.getTextWidth(UI_12_FONT_ID, title, EpdFontFamily::BOLD);
+  for (const auto& opt : options) {
+    const int width = renderer.getTextWidth(optionFontId, opt.c_str(), optionStyle);
+    if (width > maxTextWidth) maxTextWidth = width;
+  }
+
+  const int optionCount = static_cast<int>(options.size());
+  const int listHeight = rowHeight * optionCount + itemSpacing * (optionCount - 1);
+  const int dialogW = std::min((maxTextWidth + innerPadding * 2 + selectionHPadding * 2) * 12 / 10,
+                               pageWidth - metrics.optionPopupDialogSideMargin * 2);
+  const int contentHeight = titleLineHeight + metrics.optionPopupTitleGap + listHeight;
+  const int dialogH = contentHeight + innerPadding * 2;
+  const int dialogX = (pageWidth - dialogW) / 2;
+  const int dialogY = (pageHeight - dialogH) / 2;
+  const int itemRectX = dialogX + innerPadding;
+  const int itemRectW = dialogW - innerPadding * 2;
+  const int firstItemY = dialogY + innerPadding + titleLineHeight + metrics.optionPopupTitleGap;
+
+  layout.dialog = Rect{dialogX, dialogY, dialogW, dialogH};
+  layout.options.reserve(optionCount);
+  for (int i = 0; i < optionCount; i++) {
+    layout.options.push_back(Rect{itemRectX, firstItemY + i * (rowHeight + itemSpacing), itemRectW, rowHeight});
+  }
+  return layout;
+}
