@@ -33,7 +33,7 @@ impl DevelopersScreen {
 
     fn frontlight_panel_toggle(&self) -> Toggle<Msg> {
         Toggle::new(
-            tr!(STR_RUST_FRONTLIGHT_PANEL),
+            tr!(STR_FRONTLIGHT_PANEL_RUST),
             DevSettings::frontlight_panel_rust(),
             tr!(STR_STATE_ON),
             tr!(STR_STATE_OFF),
@@ -63,7 +63,7 @@ impl Screen for DevelopersScreen {
         let spacing = Theme::metric(ThemeMetric::VerticalSpacing);
 
         NavigationScreen::new(vstack![spacing;
-            Section::new(tr!(STR_SECTION_IMPLEMENTATION), self.frontlight_panel_toggle()),
+            Section::new(tr!(STR_SECTION_EXPERIMENTAL), self.frontlight_panel_toggle()),
             Section::new(tr!(STR_SECTION_MEMORY), self.memory_usage_view()),
         ])
     }
