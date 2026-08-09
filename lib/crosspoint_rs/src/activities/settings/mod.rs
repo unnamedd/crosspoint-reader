@@ -1,5 +1,5 @@
 //! Settings screens.
 
-pub mod developers;
+pub mod developers_screen;
 
-pub use developers::DevelopersScreen;
+pub use developers_screen::DevelopersScreen;
