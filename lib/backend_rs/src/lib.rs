@@ -45,7 +45,7 @@ pub mod frontlight;
 pub mod i18n;
 pub mod lifecycle;
 
-pub use frontlight::{Display, Frontlight};
+pub use frontlight::{DevSettings, Display, Frontlight};
 pub use icon::{IconRole, IconSpec};
 
 /// Borrows a C string the firmware owns.

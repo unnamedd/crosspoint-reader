@@ -73,3 +73,19 @@ impl Display {
         unsafe { raw::cpp_display_toggle_inverted() != 0 }
     }
 }
+
+/// Developer-only switches, surfaced under Settings > System > Developers.
+pub struct DevSettings;
+
+impl DevSettings {
+    /// Whether the Rust frontlight panel opens instead of the C++ one.
+    pub fn frontlight_panel_rust() -> bool {
+        unsafe { raw::cpp_dev_frontlight_panel_rust() != 0 }
+    }
+
+    /// Sets it and persists. Writes flash, so call on a user action, never per
+    /// frame; the host skips the write when the value is unchanged.
+    pub fn set_frontlight_panel_rust(enabled: bool) {
+        unsafe { raw::cpp_dev_set_frontlight_panel_rust(u8::from(enabled)) }
+    }
+}

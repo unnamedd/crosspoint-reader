@@ -159,6 +159,8 @@ extern "C" {
     // be respected by each caller instead of enforced once.
 
     // -- display ------------------------------------------------------------
+    pub fn cpp_dev_frontlight_panel_rust() -> u8;
+    pub fn cpp_dev_set_frontlight_panel_rust(enabled: u8);
     pub fn cpp_display_is_inverted() -> u8;
     /// Flips inversion, persists it, and returns the new state.
     pub fn cpp_display_toggle_inverted() -> u8;

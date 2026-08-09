@@ -8,6 +8,15 @@
 
 extern "C" {
 
+uint8_t cpp_dev_frontlight_panel_rust() { return SETTINGS.frontlightPanelRust; }
+
+void cpp_dev_set_frontlight_panel_rust(const uint8_t enabled) {
+  const uint8_t value = enabled ? 1 : 0;
+  if (SETTINGS.frontlightPanelRust == value) return;  // no needless flash write
+  SETTINGS.frontlightPanelRust = value;
+  SETTINGS.saveToFile();
+}
+
 // The setting, not the panel's current polarity. ActivityManager re-resolves
 // the display every render from `screenInverted && appliesNightMode()`, so a
 // direct flip here is undone on the next frame and the state read back would

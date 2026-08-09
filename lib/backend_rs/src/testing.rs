@@ -70,6 +70,8 @@ stub! {
     cpp_frontlight_set_warmth(p: i32);
     cpp_frontlight_set_on(o: u8);
     cpp_frontlight_save();
+    cpp_dev_frontlight_panel_rust() -> u8;
+    cpp_dev_set_frontlight_panel_rust(e: u8);
     cpp_display_is_inverted() -> u8;
     cpp_display_toggle_inverted() -> u8;
     cpp_heap_free() -> i32;
