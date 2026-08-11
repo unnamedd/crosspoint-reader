@@ -5,7 +5,7 @@
 //! the firmware heap and so contributes almost nothing to static sections.
 
 use backend::{device, tr};
-use cpui::{vstack, List, ListRow, NavigationScreen, Screen, Section, Theme, ThemeMetric, View};
+use xpui::{vstack, List, ListRow, NavigationScreen, Screen, Section, Theme, ThemeMetric, View};
 
 use crate::units::Units;
 
