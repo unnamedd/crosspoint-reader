@@ -8,7 +8,7 @@
 use alloc::format;
 
 use backend::{tr, Display, Frontlight, IconRole};
-use cpui::{
+use xpui::{
     finish_screen, hstack, vstack, Alignment, Button, IconToggle, OverlayPanel, Screen, Scrim,
     Spacer, Stepper, Text, Theme, ThemeMetric, View,
 };
