@@ -927,8 +927,8 @@ Or individually:
 
 ```bash
 cargo fmt --check
-cargo clippy --workspace --all-targets --features cpui-rs/testing -- -D warnings
-cargo test --workspace --features cpui-rs/testing
+cargo clippy --workspace --all-targets --features xpui-rs/testing -- -D warnings
+cargo test --workspace --features xpui-rs/testing
 ```
 
 Then build what the change affects. PlatformIO compiles Rust itself via
@@ -950,7 +950,7 @@ not just the simulator.
 
 #### Architecture rules
 
-**`lib/cpui/`** — generic framework, reusable by any firmware.
+**`lib/xpui_rs/`** — generic framework, reusable by any firmware.
 - Contains: `View` trait, geometry, layout containers, widgets, screen roots,
   the FFI layer, and the activity lifecycle.
 - Must NOT contain: any product name, screen, or feature. CI greps for this.
@@ -963,7 +963,7 @@ not just the simulator.
 - Each screen implements `RustActivity` and calls `register_activity!` once.
 
 ```
-lib/cpui/src/       lib/crosspoint_rs/src/
+lib/xpui_rs/src/       lib/crosspoint_rs/src/
 ├── lib.rs                     ├── lib.rs
 ├── runtime.rs   heap, panic   ├── strings.rs      STR_* keys
 ├── geometry.rs                └── activities/
