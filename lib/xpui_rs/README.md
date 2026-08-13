@@ -65,6 +65,16 @@ That is a working screen. It draws a header, a label and a stepper; it responds
 to a finger on the track, to the `−` and `+` glyphs, and to the hardware buttons
 — and you did not write a single coordinate, hit-test or redraw call.
 
+The loop it sits in is the whole of the contract:
+
+```mermaid
+flowchart LR
+  b["body()<br/>describe what you want"] --> r["framework<br/>measures and paints"]
+  r --> i["tap · swipe · button"]
+  i --> u["update(Message)<br/>the only place state changes"]
+  u --> b
+```
+
 It cannot reach a device yet, though: `xpui` has no idea one exists.
 [`backend`](../backend_rs/) is what connects it, and
 [**Your first Rust screen**](../../docs/your-first-rust-screen.md) walks the whole path

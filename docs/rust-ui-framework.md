@@ -21,6 +21,31 @@ Rust code compiles into the firmware for every device, not just the simulator.
 | `lib/backend_rs` | The C++ bridge: the `Host` implementation, every `extern "C"` declaration, `tr!`, and the activity lifecycle. Effectively all the `unsafe`. | `rlib` |
 | `lib/crosspoint_rs` | CrossPoint's screens, mirroring `src/activities/`. | `staticlib` + `rlib` |
 
+```mermaid
+flowchart TD
+  subgraph cpp["C++ firmware — unchanged"]
+    act["Activity + navigation"]
+    thm["UITheme / FreeInkUI<br/> still draws every widget"]
+  end
+
+  ffi["src/rust_ffi/<br/> plain C functions"]
+
+  subgraph rs["Rust"]
+    sc["crosspoint_rs — the screens"]
+    be["backend_rs — the bridge"]
+    fw["xpui_rs — the framework<br/> no product name, no hardware"]
+  end
+
+  act --> be --> ffi --> thm
+  sc --> fw
+  be -.->|"implements Canvas, TextMetrics, Chrome, InputSource, Clock"| fw
+```
+
+The arrow that matters is the dotted one: `xpui` *declares* what it needs and
+`backend` supplies it, so the framework cannot tell it is running on a CrossPoint.
+Every pixel is still painted by the existing theme, which is why a Rust list and
+a C++ list are the same list.
+
 The dependency points **inward** — `crosspoint_rs` → `backend` → `xpui` — so the
 framework never names a firmware symbol and the compiler enforces the boundary.
 `crosspoint_rs` statically contains the other two, so the firmware links one
@@ -57,6 +82,21 @@ lib/crosspoint_rs/src/                the screens
 ---
 
 ## Adding a screen
+
+A screen is a struct with a `Message` type, a `body()` that describes what it
+looks like, and an `update()` that is the only place its state changes:
+
+```mermaid
+flowchart LR
+  b["body()<br/> describe what you want"] --> r["framework<br/> measures and paints"]
+  r --> i["tap · swipe · button"]
+  i --> u["update(Message)<br/> the only place state changes"]
+  u --> b
+```
+
+`body()` is a description rather than a sequence of draw calls, and nothing
+outside `update()` can change the screen. That is what removes the class of bug
+where a screen paints something its state no longer agrees with.
 
 The step-by-step walkthrough now lives in
 **[Your first Rust screen](your-first-rust-screen.md)** — it goes from an empty file to a
