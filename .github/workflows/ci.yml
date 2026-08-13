@@ -145,29 +145,20 @@ jobs:
           key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
           restore-keys: pio-${{ runner.os }}-
 
-      # The firmware links a Rust staticlib, so the device targets must be
-      # available or every environment below fails at the cargo step.
-      # `default` is ESP32-C3 (RISC-V, stable); `sticky` is
-      # ESP32-S3 (Xtensa), which needs the esp-rs fork and rust-src.
-      - name: Cache Rust toolchains
+      # The firmware links a Rust staticlib, so the toolchain must be present or
+      # the build fails at the cargo step. `default` is ESP32-C3 (RISC-V), which
+      # stable Rust targets: rustup installs the pin and the target from
+      # rust-toolchain.toml on first use, so nothing has to be installed here.
+      # The Xtensa fork is NOT needed by this job — see build-sticky.
+      - name: Cache Rust toolchain
         uses: actions/cache@v4
         with:
           path: |
             ~/.rustup/toolchains
             ~/.cargo/registry
             ~/.cargo/git
-          key: rust-esp-${{ runner.os }}-${{ hashFiles('**/Cargo.toml', 'rust-toolchain.toml') }}
-          restore-keys: rust-esp-${{ runner.os }}-
-
-      # The RISC-V target comes from rust-toolchain.toml. Xtensa does not: no
-      # stable Rust targets it, so ESP32-S3 needs the esp-rs fork installed here.
-      - name: Install Rust device targets
-        run: |
-          set -euo pipefail
-          if [ ! -d "$HOME/.rustup/toolchains/esp" ]; then
-            cargo install espup --locked
-            espup install
-          fi
+          key: rust-riscv-${{ runner.os }}-${{ hashFiles('**/Cargo.toml', 'rust-toolchain.toml') }}
+          restore-keys: rust-riscv-${{ runner.os }}-
 
       - name: Build default firmware
         run: |
@@ -190,7 +181,9 @@ jobs:
           print("| Environment | Flash | Static RAM | of which Rust |")
           print("|---|---|---|---|")
 
-          for env_name in ("default", "sticky"):
+          # Only what this job builds. sticky is a separate job with its own
+          # summary, and listing it here could only ever print n/a.
+          for env_name in ("default",):
               path = pathlib.Path(".pio/build") / env_name / "memory.json"
               if not path.exists():
                   print(f"| {env_name} | n/a | n/a | n/a |")
@@ -250,6 +243,33 @@ jobs:
           path: ~/.platformio
           key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
           restore-keys: pio-${{ runner.os }}-
+
+      # sticky is ESP32-S3, which is Xtensa. No stable Rust targets Xtensa, so
+      # this is the one environment needing the esp-rs fork: scripts/build_rust.py
+      # runs `cargo +esp ... -Z build-std=core,alloc` for it. Without this the
+      # build dies with "toolchain 'esp' is not installed".
+      #
+      # esp-rs's own action rather than `cargo install espup && espup install`,
+      # which would compile espup from source on every cache miss. This is what
+      # esp-rs use in their CI. ldproxy is for cargo-driven linking; PlatformIO
+      # does the link here, so it is not needed.
+      # Pinned, like rust-toolchain.toml pins the stable one: the action defaults
+      # to `latest`, and a silently newer compiler is a silently different
+      # firmware binary. 1.95.0.0 is also what clippy.toml records as the msrv.
+      - uses: esp-rs/xtensa-toolchain@v1.6
+        with:
+          version: "1.95.0.0"
+          buildtargets: esp32s3
+          ldproxy: false
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-esp-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: cargo-esp-${{ runner.os }}-
 
       - name: Build sticky firmware
         run: |
