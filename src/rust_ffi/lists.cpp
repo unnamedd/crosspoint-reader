@@ -48,25 +48,28 @@ void cpp_theme_draw_option_popup(const uint8_t* title, const char* (*optionText)
   fui::Frame<DIALOG_CAPACITY> frame(target, device, noInput, g_dialogHits);
 
   const auto& metrics = UITheme::getInstance().getMetrics();
-  const uint8_t shown = static_cast<uint8_t>(count > MAX_DIALOG_OPTIONS ? MAX_DIALOG_OPTIONS : count);
+  // Options past the sixteenth are dropped: the dialog does not scroll, so there
+  // is nowhere to put them. Held as int32_t to match `count` and the index the
+  // callback takes; only the props field below is narrower.
+  const int32_t shown = std::min<int32_t>(count, MAX_DIALOG_OPTIONS);
 
   // The labels live in the Rust caller's own buffers for the whole call — the
   // same guarantee draw_list relies on below — so the entries point straight at
   // them. Copying each into a std::string was a heap allocation per option on
   // every repaint of an open dialog.
   fui::DialogOption entries[MAX_DIALOG_OPTIONS];
-  for (uint8_t i = 0; i < shown; ++i) {
+  for (int32_t i = 0; i < shown; ++i) {
     const char* label = optionText(ctx, i);
     entries[i].label = label ? label : "";
     entries[i].action = ACTION_OPTION;
     entries[i].value = static_cast<int16_t>(i);
-    entries[i].state = (static_cast<int32_t>(i) == selected) ? fui::StateFocused : fui::StateNormal;
+    entries[i].state = (i == selected) ? fui::StateFocused : fui::StateNormal;
   }
 
   fui::OptionDialogProps props;
   props.title = title ? asText(title) : nullptr;
   props.options = entries;
-  props.optionCount = shown;
+  props.optionCount = static_cast<uint8_t>(shown);
   props.verticalOptions = true;
   // xpui declared these rows and routes taps itself, so the component only
   // draws; the buffer below is read for geometry, never dispatched from.
