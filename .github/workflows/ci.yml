@@ -2,7 +2,10 @@ name: CI (build)
 
 on:
   push:
-    branches: [master]
+    # feature/** so a branch can be checked on a fork before it becomes a pull
+    # request. Without it nothing runs until the PR is open, which is late to
+    # find out that a toolchain is missing on the runner.
+    branches: [master, 'feature/**']
   pull_request:
 
 permissions:
